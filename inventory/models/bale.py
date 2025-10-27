@@ -45,5 +45,9 @@ class Bale(SoftDeleteMixin):
       return self.sale_price - self.purchase_price
     return None
   
+  @property
+  def is_sold(self):
+    return self.status == self.BaleStatus.SOLD or hasattr(self, "sale")
+  
   def __str__ (self):
     return f"{self.code} - ${self.name}"
