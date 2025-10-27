@@ -5,6 +5,8 @@ from .models import Category, Bale, Supplier, Warehouse, Sale, BaleMovement, Cus
 from .services import sell_bale
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.contrib.admin.widgets import RelatedFieldWidgetWrapper
+from unfold.admin import ModelAdmin
 
 @admin.action(description="Marcar como vendido")
 def mark_as_sold(modeladmin, request, queryset):
@@ -36,8 +38,16 @@ def mark_as_sold(modeladmin, request, queryset):
         messages.error(request, f"{errores} fardo(s) no pudo(ieron) ser vendido(s)")
 
 
+class OnlySuperuserActiveMixin(admin.ModelAdmin):
+    def get_readonly_fields(self, request, obj=None):
+        ro = list(super().get_readonly_fields(request, obj))
+        if not request.user.is_superuser:
+            ro += ['is_active']
+        return ro
+
+
 @admin.register(Bale)
-class BaleAdmin(admin.ModelAdmin):
+class BaleAdmin(OnlySuperuserActiveMixin,ModelAdmin):
   list_display = (
     'code', 
     'name', 
@@ -56,7 +66,7 @@ class BaleAdmin(admin.ModelAdmin):
   
   fieldsets = (
       ('Información General', {
-          'fields': ('code', 'name', 'category')
+          'fields': ('code', 'name', 'category', 'warehouse')
       }),
       ('Precios', {
           'fields': ('purchase_price', 'sale_price', 'show_profit')
@@ -69,6 +79,7 @@ class BaleAdmin(admin.ModelAdmin):
           'classes': ('collapse',)
       }),
   )
+
   
   def status_badge(self, obj):
       colors = {
@@ -107,11 +118,10 @@ class BaleAdmin(admin.ModelAdmin):
 
 
 @admin.register(Sale)
-class SaleAdmin(admin.ModelAdmin):
+class SaleAdmin(OnlySuperuserActiveMixin,ModelAdmin):
     list_display = ('bale', 'customer',"amount", "sold_at", "sold_by")
     list_filter = ('sold_at', 'sold_by',)
     search_fields = ('bale__code', 'bale__name', 'customer__name',)
-    # autocomplete_fields = ('bale','customer',)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
       if db_field.name == "bale":
@@ -126,41 +136,51 @@ class SaleAdmin(admin.ModelAdmin):
       return initial
     
     def save_model(self, request, obj, form, change):
-      bale = obj.bale
-      sell_bale(bale, sold_by=request.user)
-      obj.amount = bale.sale_price
-      obj.sold_by = request.user
-      
+      is_new = not change
+
       super().save_model(request, obj, form, change)
 
-    def get_search_results(self, request, queryset, search_term):
-      queryset, use_distinct = super().get_search_results(request, queryset, search_term)
-      
-      if 'sale' in request.path:
-          queryset = queryset.filter(status=Bale.BaleStatus.AVAILABLE)
-      
-      return queryset, use_distinct
+      if is_new:
+        bale = obj.bale
 
+        if obj.amount is None:
+            obj.amount = bale.sale_price
+            obj.save(update_fields=["amount"])
+
+        if obj.sold_by is None:
+            obj.sold_by = request.user
+            obj.save(update_fields=["sold_by"])
+
+        bale.status = Bale.BaleStatus.SOLD
+        bale.is_active = False
+        bale.save(update_fields=["status", "is_active"])
+
+        BaleMovement.objects.create(
+            bale=bale,
+            type=BaleMovement.MovementType.SOLD,
+            notes=obj.notes or ""
+        )
+    
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(OnlySuperuserActiveMixin,ModelAdmin):
     list_display = ('name', 'is_active')
     list_filter = ('is_active',)
     search_fields = ('name',)
 
 @admin.register(Supplier)
-class SupplierAdmin(admin.ModelAdmin):
+class SupplierAdmin(OnlySuperuserActiveMixin,ModelAdmin):
     list_display = ('name', 'phone', 'is_active')
     list_filter = ('is_active',)
     search_fields = ('name',)
 
 @admin.register(Warehouse)
-class WarehouseAdmin(admin.ModelAdmin):
+class WarehouseAdmin(OnlySuperuserActiveMixin,ModelAdmin):
     list_display = ('name', 'address', 'is_active')
     list_filter = ('is_active',)
     search_fields = ('name',)
 
 @admin.register(Customer)
-class CustomerAdmin(admin.ModelAdmin):
+class CustomerAdmin(OnlySuperuserActiveMixin,ModelAdmin):
     list_display = ("name", "phone", "document", "is_active")
     search_fields = ("name", "phone", "document")
     list_filter = ("is_active",)

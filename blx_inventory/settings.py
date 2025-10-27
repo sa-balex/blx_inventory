@@ -22,6 +22,7 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
+    'unfold',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -126,3 +127,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+UNFOLD = {
+    "SITE_TITLE": "Blx inventory",
+    "SITE_HEADER": "Blx inventario",
+    "SHOW_HISTORY": False,
+    "DARK_MODE": True,
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+    },
+     "COLORS": {
+        "base": {
+            "50":  "#d6cccc",
+            "100": "#FFFFFF",
+            "900": "#0f0f0f",
+        }
+    },
+}
