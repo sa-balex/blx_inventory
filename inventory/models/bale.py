@@ -2,6 +2,7 @@ from django.db import models
 from .category import Category
 from .supplier import Supplier
 from .warehouse import Warehouse
+from .brand import Brand
 from .base import SoftDeleteMixin
 
 def generate_bale_code():
@@ -18,6 +19,7 @@ class Bale(SoftDeleteMixin):
 
   code = models.CharField("Código",max_length=50, unique=True)
   name = models.CharField("Nombre", max_length=150)
+  brand = models.ForeignKey(Brand, verbose_name="Marca", on_delete=models.PROTECT, null=True, blank=True)
   category = models.ForeignKey(Category, verbose_name="Categoría",on_delete = models.PROTECT)
   supplier = models.ForeignKey(Supplier, verbose_name="Proveedor", on_delete=models.SET_NULL, null=True, blank=True)
   warehouse = models.ForeignKey(Warehouse, verbose_name="Almacen", on_delete=models.SET_NULL, null=True, blank=True)

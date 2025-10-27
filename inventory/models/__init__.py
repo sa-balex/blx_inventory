@@ -5,3 +5,5 @@ from .warehouse import Warehouse
 from .sale import Sale
 from .bale_movement import BaleMovement
 from .customer import Customer
+from .bale_image import BaleImage
+from .brand import Brand
