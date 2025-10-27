@@ -1,7 +1,7 @@
 from django.contrib import admin, messages
 from django.utils.html import format_html
 from django.db.models import Q
-from .models import Category, Bale, Supplier, Warehouse, Sale, BaleMovement, Customer
+from .models import Category, Bale, Supplier, Warehouse, Sale, BaleMovement, Customer, BaleImage, Brand
 from .services import sell_bale
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -45,12 +45,24 @@ class OnlySuperuserActiveMixin(admin.ModelAdmin):
         return ro
 
 
+class BaleImageInline(admin.TabularInline):
+    model = BaleImage
+    extra = 1
+    readonly_fields = ("preview",)
+
+    def preview(self, obj):
+        if obj.image:
+            return format_html(f'<img src="{obj.image.url}" width="90" style="border-radius:6px;" />')
+        return "-"
+    preview.short_description = "Vista previa"
+
 @admin.register(Bale)
 class BaleAdmin(OnlySuperuserActiveMixin, admin.ModelAdmin):
     list_display = (
         'code', 
         'name', 
-        'category', 
+        'category',
+        'brand',
         'status_badge', 
         'purchase_price', 
         'sale_price', 
@@ -62,10 +74,11 @@ class BaleAdmin(OnlySuperuserActiveMixin, admin.ModelAdmin):
     search_fields = ('code', 'name', 'category__name')
     readonly_fields = ('code', 'created_at', 'updated_at', 'show_profit')
     actions = [mark_as_sold]
+    inlines = [BaleImageInline]
     
     fieldsets = (
         ('Información General', {
-            'fields': ('code', 'name', 'category', 'warehouse')
+            'fields': ('code', 'name', 'category', 'warehouse','brand')
         }),
         ('Precios', {
             'fields': ('purchase_price', 'sale_price', 'show_profit')
@@ -164,6 +177,11 @@ class CategoryAdmin(OnlySuperuserActiveMixin, admin.ModelAdmin):
     list_filter = ('is_active',)
     search_fields = ('name',)
 
+@admin.register(Brand)
+class BrandAdmin(OnlySuperuserActiveMixin, admin.ModelAdmin):
+    list_display = ('name', 'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('name',)
 
 @admin.register(Supplier)
 class SupplierAdmin(OnlySuperuserActiveMixin, admin.ModelAdmin):

@@ -1,0 +1,37 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<h1 style="margin-bottom: 20px;">📦 Inventario de Fardos</h1>
+
+<table class="adminlist table table-striped">
+    <tr>
+        <th>Código</th>
+        <th>Nombre</th>
+        <th>Categoría</th>
+        <th>Estado</th>
+        <th>Precio Compra</th>
+        <th>Precio Venta</th>
+    </tr>
+
+    {% for bale in bales %}
+        <tr>
+            <td>{{ bale.code }}</td>
+            <td>{{ bale.name }}</td>
+            <td>{{ bale.category }}</td>
+            <td>{{ bale.get_status_display }}</td>
+            <td>S/ {{ bale.purchase_price }}</td>
+            <td>
+                {% if bale.sale_price %}
+                    S/ {{ bale.sale_price }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="6" style="text-align:center;">No hay fardos registrados.</td>
+        </tr>
+    {% endfor %}
+</table>
+{% endblock %}
