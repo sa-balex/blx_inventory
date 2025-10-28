@@ -5,6 +5,11 @@ from .models import Category, Bale, Supplier, Warehouse, Sale, BaleMovement, Cus
 from .services import sell_bale
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from unfold.admin import ModelAdmin
+from django.contrib.auth.admin import UserAdmin, GroupAdmin
+from django.contrib.auth.models import User, Group
+
+from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
 
 @admin.action(description="Marcar como vendido")
@@ -37,7 +42,7 @@ def mark_as_sold(modeladmin, request, queryset):
         messages.error(request, f"{errores} fardo(s) no pudo(ieron) ser vendido(s)")
 
 
-class OnlySuperuserActiveMixin(admin.ModelAdmin):
+class OnlySuperuserActiveMixin(ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         ro = list(super().get_readonly_fields(request, obj))
         if not request.user.is_superuser:
@@ -52,12 +57,16 @@ class BaleImageInline(admin.TabularInline):
 
     def preview(self, obj):
         if obj.image:
-            return format_html(f'<img src="{obj.image.url}" width="90" style="border-radius:6px;" />')
+            return format_html(
+                '<img src="{}" style="width:80px; height:auto; cursor:zoom-in;" '
+                'onclick="this.style.width=this.style.width==\'80px\'?\'400px\':\'80px\'">'
+                , obj.image.url
+            )
         return "-"
     preview.short_description = "Vista previa"
 
 @admin.register(Bale)
-class BaleAdmin(OnlySuperuserActiveMixin, admin.ModelAdmin):
+class BaleAdmin(OnlySuperuserActiveMixin, ModelAdmin):
     list_display = (
         'code', 
         'name', 
@@ -127,7 +136,7 @@ class BaleAdmin(OnlySuperuserActiveMixin, admin.ModelAdmin):
 
 
 @admin.register(Sale)
-class SaleAdmin(OnlySuperuserActiveMixin, admin.ModelAdmin):
+class SaleAdmin(OnlySuperuserActiveMixin, ModelAdmin):
     list_display = ('bale', 'customer', "amount", "sold_at", "sold_by")
     list_filter = ('sold_at', 'sold_by',)
     search_fields = ('bale__code', 'bale__name', 'customer__name',)
@@ -172,36 +181,49 @@ class SaleAdmin(OnlySuperuserActiveMixin, admin.ModelAdmin):
 
 
 @admin.register(Category)
-class CategoryAdmin(OnlySuperuserActiveMixin, admin.ModelAdmin):
+class CategoryAdmin(OnlySuperuserActiveMixin, ModelAdmin):
     list_display = ('name', 'is_active')
     list_filter = ('is_active',)
     search_fields = ('name',)
 
 @admin.register(Brand)
-class BrandAdmin(OnlySuperuserActiveMixin, admin.ModelAdmin):
+class BrandAdmin(OnlySuperuserActiveMixin, ModelAdmin):
     list_display = ('name', 'is_active')
     list_filter = ('is_active',)
     search_fields = ('name',)
 
 @admin.register(Supplier)
-class SupplierAdmin(OnlySuperuserActiveMixin, admin.ModelAdmin):
+class SupplierAdmin(OnlySuperuserActiveMixin, ModelAdmin):
     list_display = ('name', 'phone', 'is_active')
     list_filter = ('is_active',)
     search_fields = ('name',)
 
 
 @admin.register(Warehouse)
-class WarehouseAdmin(OnlySuperuserActiveMixin, admin.ModelAdmin):
+class WarehouseAdmin(OnlySuperuserActiveMixin, ModelAdmin):
     list_display = ('name', 'address', 'is_active')
     list_filter = ('is_active',)
     search_fields = ('name',)
 
 
 @admin.register(Customer)
-class CustomerAdmin(OnlySuperuserActiveMixin, admin.ModelAdmin):
+class CustomerAdmin(OnlySuperuserActiveMixin, ModelAdmin):
     list_display = ("name", "phone", "document", "is_active")
     search_fields = ("name", "phone", "document")
     list_filter = ("is_active",)
 
 
 admin.site.register(BaleMovement)
+
+admin.site.unregister(User)
+admin.site.unregister(Group)
+
+@admin.register(User)
+class UserAdmin(UserAdmin, ModelAdmin):
+    form = UserChangeForm
+    add_form = UserCreationForm
+    change_password_form = AdminPasswordChangeForm
+
+@admin.register(Group)
+class GroupAdmin(GroupAdmin, ModelAdmin):
+    pass
