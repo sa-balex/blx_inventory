@@ -22,7 +22,6 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
-    'unfold',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -137,22 +136,4 @@ cloudinary.config(
     secure=True
 )
 
-
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-
-UNFOLD = {
-    "SITE_TITLE": "BLX Inventory",
-    "SITE_HEADER": "Panel de Administración",
-    "SITE_URL": "/admin/",
-    "SHOW_HISTORY": True,
-    "SHOW_ACTIONS": True,
-    "SITE_FAVICON": "https://cdn-icons-png.flaticon.com/512/2983/2983783.png",
-    "DASHBOARD_CALLBACK": "inventory.admin.dashboard_callback",
-   "COLORS": {
-        "base": {
-            "50":  "#d6cccc",
-            "100": "#FFFFFF",
-            "900": "#0f0f0f",
-        }
-    },
-}
